@@ -122,43 +122,43 @@ To configure an external blobstore for your PAS tile with your S3 buckets, see [
   \- name: sdk-preview
       jobs:
       \- name: s3-unversioned-blobstore-backup-restorer
-        release: backup-and-restore-sdk-addon
-        properties:
-          enabled: true
-          buckets:
-            droplets:
-              name: &lt;name-of-droplets-bucket&gt;
-              region: &lt;region-of-droplets-bucket&gt;
-              aws\_access\_key_id: &lt;aws-access-key&gt;
-              aws\_secret\_access\_key: &lt;aws-secret-key&gt;
-              endpoint: &lt;blostore-endpoint&gt;
-              backup:
-                name: &lt;name-of-droplets-backup-bucket&gt;
-                region: &lt;region-of-droplets-backup-bucket&gt;
-            packages:
-              name: &lt;name-of-packages-bucket&gt;
-              region: &lt;region-of-packages-bucket&gt;
-              aws\_access\_key\_id: &lt;aws-access-key&gt;
-              aws\_secret\_access\_key: &lt;aws-secret-key&gt;
-              endpoint: &lt;blobstore-endpoint&gt;
-              backup:
-                name: &lt;name-of-packages-backup-bucket&gt;
-                region: &lt;region-of-packages-backup-bucket&gt;
-            buildpacks:
-              name: &lt;name-of-buildpacks-bucket&gt;
-              region: &lt;region-of-buildpacks-bucket&gt;
-              aws\_access\_key\_id: &lt;aws-access-key&gt;
-              aws\_secret\_access\_key: &lt;aws-secret-key&gt;
-              endpoint: &lt;blostore-endpoint&gt;
-              backup:
-                name: &lt;name-of-buildpacks-backup-bucket&gt;
-                region: &lt;region-of-buildpacks-backup-bucket&gt;
+          release: backup-and-restore-sdk-addon
+          properties:
+            enabled: true
+            buckets:
+              droplets:
+                name: &lt;name-of-droplets-bucket&gt;
+                region: &lt;region-of-droplets-bucket&gt;
+                aws\_access\_key_id: &lt;aws-access-key&gt;
+                aws\_secret\_access\_key: &lt;aws-secret-key&gt;
+                endpoint: &lt;blostore-endpoint&gt;
+                backup:
+                  name: &lt;name-of-droplets-backup-bucket&gt;
+                  region: &lt;region-of-droplets-backup-bucket&gt;
+              packages:
+                name: &lt;name-of-packages-bucket&gt;
+                region: &lt;region-of-packages-bucket&gt;
+                aws\_access\_key\_id: &lt;aws-access-key&gt;
+                aws\_secret\_access\_key: &lt;aws-secret-key&gt;
+                endpoint: &lt;blobstore-endpoint&gt;
+                backup:
+                  name: &lt;name-of-packages-backup-bucket&gt;
+                  region: &lt;region-of-packages-backup-bucket&gt;
+              buildpacks:
+                name: &lt;name-of-buildpacks-bucket&gt;
+                region: &lt;region-of-buildpacks-bucket&gt;
+                aws\_access\_key\_id: &lt;aws-access-key&gt;
+                aws\_secret\_access\_key: &lt;aws-secret-key&gt;
+                endpoint: &lt;blostore-endpoint&gt;
+                backup:
+                  name: &lt;name-of-buildpacks-backup-bucket&gt;
+                  region: &lt;region-of-buildpacks-backup-bucket&gt;
       include:
-        deployments:
-        \- &lt;pas-deployment-name&gt;
-        jobs:
-        \- name: mysql-backup
-          release: cf-backup-and-restore
+          deployments:
+          \- &lt;pas-deployment-name&gt;
+          jobs:
+          \- name: mysql-backup
+            release: cf-backup-and-restore
   </pre>
 
 1. Run the following command to finishing updating the runtime config:
