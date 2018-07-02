@@ -7,11 +7,11 @@ owner: RelEng
 
 This topic describes the procedure for enabling external blobstore backups on your Pivotal Cloud Foundry (PCF) installation.
 
-External blobstore backups leverage the versioning feature of S3-compatible storage solutions. External blobstore backups do not download the files stored in the blobstore.
+BBR supports both versioned and un-versioned S3-Compatible blobstores. For more information, see [Backup and Restore with External Blobstores](https://docs.cloudfoundry.org/bbr/external-blobstores.html).
 
-For more information about the process behind backup and restore, see [Backup and Restore with External Blobstores](https://docs.cloudfoundry.org/bbr/external-blobstores.html) in the Cloud Foundry documentation.
+<p class="note"><strong>Note:</strong> If you enable <strong>versioned</strong> S3-compatible external blobstore backups, you will need to update your runtime configuration when upgrading to PCF v2.1. Remove <code>s3-versioned-blobstore-backup-restorer</code> from your runtime configuration before upgrading.</p>
 
-<p class="note"><strong>Note:</strong> If you enable external blobstore backups, you will need to update your runtime configuration when upgrading to PCF v2.1. Remove <code>s3-versioned-blobstore-backup-restorer</code> from your runtime configuration before upgrading.</p>
+<p class="note"><strong>Note:</strong> If you enable <strong>unversioned</strong> S3-compatible external blobstore backups, you will need to update your runtime configuration when upgrading to PCF v2.2. Remove <code>s3-unversioned-blobstore-backup-restorer</code> from your runtime configuration before upgrading.</p>
 
 ## <a id="backup-prepare"></a> Step 1: Enable Backup Prepare Node
 
@@ -21,9 +21,14 @@ To ensure the backup prepare node is deployed on Elastic Runtime, see [Enable Ba
 
 1. Create buckets for your Elastic Runtime. For more information about creating buckets, see [Create S3 Buckets](../pcf-aws-manual-config.html#create-s3) in the _Manually Configuring AWS for PCF_.
 
-1. Enable versioning and replication. For more information, see [Enable Versioning on Your S3-Compatible Blobstore](https://docs.cloudfoundry.org/bbr/external-blobstores.html#enable-s3-versioning) in _Backup and Restore with External Blobstores_.
+1. For configuring <strong>versioned</strong> S3-compatible blobstore
 
-1. (Optional) Pivotal recommends you include a lifecycle policy rule to delete noncurrent versions after a period of time. Including this policy rule saves storage space and cost. For an example of this rule, see [Example 6: Specifying a Lifecycle Rule for a Versioning-Enabled Bucket](https://docs.aws.amazon.com/AmazonS3/latest/dev/lifecycle-configuration-examples.html#lifecycle-config-conceptual-ex6) in the AWS documentation.
+  1. Enable versioning and replication. For more information, see [Enable Versioning on Your S3-Compatible Blobstore](https://docs.cloudfoundry.org/bbr/external-blobstores.html#enable-s3-versioning) in _Backup and Restore with External Blobstores_.
+
+  1. (Optional) Pivotal recommends you include a lifecycle policy rule to delete noncurrent versions after a period of time. Including this policy rule saves storage space and cost. For an example of this rule, see [Example 6: Specifying a Lifecycle Rule for a Versioning-Enabled Bucket](https://docs.aws.amazon.com/AmazonS3/latest/dev/lifecycle-configuration-examples.html#lifecycle-config-conceptual-ex6) in the AWS documentation.
+
+1. For configuring <strong>unversioned</strong> S3-compatible blobstore
+  1. For each bucket created in Step 2.1, create a backup bucket. We recommend that either the backup buckets or copies of them should be in a different region to the live buckets. For more information, see [Enable Backup and Restore of Your Unversioned S3-Compatible Blobstore](https://docs.cloudfoundry.org/bbr/external-blobstores.html#s3-unversioned)
 
 ## <a id="external-blobstore"></a> Step 3: Configure an External Blobstore
 
@@ -67,47 +72,93 @@ To configure an external blobstore for Elastic Runtime with your S3 buckets, see
       version: &lt;the-release-version&gt;
   </pre>
 
-1. Append the below to the `addons` section of your `runtime-config.yml`.
+1. Append the appropriate configuration to the `addons` section of your `runtime-config.yml`.
 </br>
 </br>
- Replace the bracketed placeholders in the `droplets`, `packages`, and `buildpacks` sections with the values you previously created in [Step 2: Set S3 Blobstore Versioning](../pcf-aws-manual-config.html#create-s3).
+ Replace the bracketed placeholders in the `droplets`, `packages`, and `buildpacks` sections with the values you previously created in [Step 2: Setup S3 Blobstore Buckets](../pcf-aws-manual-config.html#create-s3).
 </br>
 </br>
- Replace the bracketed information in the `include` section with the Elastic Runtime Deployment name you recorded earlier.
-  <pre>
+ Replace the bracketed information in the `include` section with the PAS Deployment name you recorded earlier.
+  1. For <strong>versioned</strong> S3-compatible blobstores
+   <pre>
+    addons:
+    <!-- Append the below to the list of addons: -->
+    \- name: sdk-preview
+        jobs:
+        \- name: s3-versioned-blobstore-backup-restorer
+          release: backup-and-restore-sdk-addon
+          properties:
+            enabled: true
+            buckets:
+              droplets:
+                name: &lt;name-of-droplets-bucket&gt;
+                region: &lt;region-of-droplets-bucket&gt;
+                aws\_access\_key_id: &lt;aws-access-key&gt;
+                aws\_secret\_access\_key: &lt;aws-secret-key&gt;
+                endpoint: &lt;blostore-endpoint&gt;
+              packages:
+                name: &lt;name-of-packages-bucket&gt;
+                region: &lt;region-of-packages-bucket&gt;
+                aws\_access\_key\_id: &lt;aws-access-key&gt;
+                aws\_secret\_access\_key: &lt;aws-secret-key&gt;
+                endpoint: &lt;blobstore-endpoint&gt;
+              buildpacks:
+                name: &lt;name-of-buildpacks-bucket&gt;
+                region: &lt;region-of-buildpacks-bucket&gt;
+                aws\_access\_key\_id: &lt;aws-access-key&gt;
+                aws\_secret\_access\_key: &lt;aws-secret-key&gt;
+                endpoint: &lt;blostore-endpoint&gt;
+        include:
+          deployments:
+          \- &lt;pas-deployment-name&gt;
+          jobs:
+          \- name: mysql-backup
+            release: cf-backup-and-restore
+    </pre>
+  1. For <strong>unversioned</strong> S3-comptabile Blobstores
+ <pre>
   addons:
   <!-- Append the below to the list of addons: -->
   \- name: sdk-preview
       jobs:
-      \- name: s3-versioned-blobstore-backup-restorer
-        release: backup-and-restore-sdk-addon
-        properties:
-          enabled: true
-          buckets:
-            droplets:
-              name: &lt;name-of-droplets-bucket&gt;
-              region: &lt;region-of-droplets-bucket&gt;
-              aws\_access\_key\_id: &lt;aws-access-key&gt;
-              aws_secret\_access\_key: &lt;aws-secret-key&gt;
-              endpoint: &lt;blobstore-endpoint&gt;
-            packages:
-              name: &lt;name-of-packages-bucket&gt;
-              region: &lt;region-of-packages-bucket&gt;
-              aws\_access\_key\_id: &lt;aws-access-key&gt;
-              aws\_secret\_access\_key: &lt;aws-secret-key&gt;
-              endpoint: &lt;blobstore-endpoint&gt;
-            buildpacks:
-              name: &lt;name-of-buildpacks-bucket&gt;
-              region: &lt;region-of-buildpacks-bucket&gt;
-              aws\_access\_key\_id: &lt;aws-access-key&gt;
-              aws\_secret\_access\_key: &lt;aws-secret-key&gt;
-              endpoint: &lt;blobstore-endpoint&gt;
+      \- name: s3-unversioned-blobstore-backup-restorer
+          release: backup-and-restore-sdk-addon
+          properties:
+            enabled: true
+            buckets:
+              droplets:
+                name: &lt;name-of-droplets-bucket&gt;
+                region: &lt;region-of-droplets-bucket&gt;
+                aws\_access\_key_id: &lt;aws-access-key&gt;
+                aws\_secret\_access\_key: &lt;aws-secret-key&gt;
+                endpoint: &lt;blostore-endpoint&gt;
+                backup:
+                  name: &lt;name-of-droplets-backup-bucket&gt;
+                  region: &lt;region-of-droplets-backup-bucket&gt;
+              packages:
+                name: &lt;name-of-packages-bucket&gt;
+                region: &lt;region-of-packages-bucket&gt;
+                aws\_access\_key\_id: &lt;aws-access-key&gt;
+                aws\_secret\_access\_key: &lt;aws-secret-key&gt;
+                endpoint: &lt;blobstore-endpoint&gt;
+                backup:
+                  name: &lt;name-of-packages-backup-bucket&gt;
+                  region: &lt;region-of-packages-backup-bucket&gt;
+              buildpacks:
+                name: &lt;name-of-buildpacks-bucket&gt;
+                region: &lt;region-of-buildpacks-bucket&gt;
+                aws\_access\_key\_id: &lt;aws-access-key&gt;
+                aws\_secret\_access\_key: &lt;aws-secret-key&gt;
+                endpoint: &lt;blostore-endpoint&gt;
+                backup:
+                  name: &lt;name-of-buildpacks-backup-bucket&gt;
+                  region: &lt;region-of-buildpacks-backup-bucket&gt;
       include:
-        deployments:
-        \- &lt;elastic-runtime-deployment-name&gt;
-        jobs:
-        \- name: mysql-backup
-          release: cf-backup-and-restore
+          deployments:
+          \- &lt;elastic-runtime-deployment-name&gt;
+          jobs:
+          \- name: mysql-backup
+            release: cf-backup-and-restore
   </pre>
 
 1. Run the following command to finishing updating the runtime config:
